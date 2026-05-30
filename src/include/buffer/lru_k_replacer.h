@@ -26,13 +26,17 @@
 namespace bustub {
 
 class LRUKNode {
-  public:
-    LRUKNode(frame_id_t fid) { fid_ = fid; }
-    void RecordAccess(size_t timestamp) { history_.push_back(timestamp); k_ += 1; }
-    void SetEvictable(bool set_evictable) { is_evictable_ = set_evictable; }
-    bool IsEvictable() { return is_evictable_; }
-    size_t GetDistance() { return k_; }
-    size_t GetLatestAccessTimestamp() { return history_.empty() ? 0 : history_.back(); }
+ public:
+  LRUKNode(frame_id_t fid) { fid_ = fid; }
+  void RecordAccess(size_t timestamp) {
+    history_.push_back(timestamp);
+    k_ += 1;
+  }
+  void SetEvictable(bool set_evictable) { is_evictable_ = set_evictable; }
+  bool IsEvictable() { return is_evictable_; }
+  size_t GetDistance() { return k_; }
+  size_t GetLatestAccessTimestamp() { return history_.empty() ? 0 : history_.back(); }
+
  private:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
   // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.

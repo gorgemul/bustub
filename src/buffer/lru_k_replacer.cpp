@@ -11,10 +11,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "buffer/lru_k_replacer.h"
-#include "common/exception.h"
 #include <chrono>
-#include <stdexcept>
 #include <cstdio>
+#include <stdexcept>
+#include "common/exception.h"
 
 namespace bustub {
 
@@ -48,7 +48,7 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
   bool evict_frame_is_inf_distance = false;
 
   latch_.lock();
-  
+
   for (auto it = node_store_.begin(); it != node_store_.end(); ++it) {
     LRUKNode &node = it->second;
 
@@ -82,7 +82,7 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
         evict_frame_access_timestamp = current_frame_access_timestamp;
       }
     }
-  } 
+  }
   if (evict_frame_id.has_value()) {
     node_store_.erase(evict_frame_id.value());
     curr_size_ -= 1;
