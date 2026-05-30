@@ -47,7 +47,7 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
   size_t evict_frame_access_timestamp = 0;
   bool evict_frame_is_inf_distance = false;
 
-  latch_.lock();
+  std::scoped_lock lock(latch_);
 
   for (auto it = node_store_.begin(); it != node_store_.end(); ++it) {
     LRUKNode &node = it->second;
@@ -87,7 +87,6 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
     node_store_.erase(evict_frame_id.value());
     curr_size_ -= 1;
   }
-  latch_.unlock();
   return evict_frame_id;
 }
 
@@ -105,16 +104,14 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
  * leaderboard tests.
  */
 void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {
-  latch_.lock();
+  std::scoped_lock lock(latch_);
   if (node_store_.size() >= replacer_size_) {
-    latch_.unlock();
     return;
   }
   if (node_store_.count(frame_id) == 0) {
     node_store_.insert(std::make_pair(frame_id, LRUKNode(frame_id)));
   }
   node_store_.at(frame_id).RecordAccess(++current_timestamp_);
-  latch_.unlock();
 }
 
 /**
@@ -135,16 +132,14 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
  * @param set_evictable whether the given frame is evictable or not
  */
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
-  latch_.lock();
+  std::scoped_lock lock(latch_);
   if (node_store_.count(frame_id) == 0) {
-    latch_.unlock();
     // throw std::invalid_argument("frame_id not exist in LRUKReplacer::SetEvictable");
     return;
   }
   LRUKNode &node = node_store_.at(frame_id);
   bool before = node.IsEvictable();
   if (before == set_evictable) {
-    latch_.unlock();
     return;
   }
   node.SetEvictable(set_evictable);
@@ -153,7 +148,6 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   } else {
     curr_size_ -= 1;
   }
-  latch_.unlock();
 }
 
 /**
@@ -174,18 +168,15 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
  * @param frame_id id of frame to be removed
  */
 void LRUKReplacer::Remove(frame_id_t frame_id) {
-  latch_.lock();
+  std::scoped_lock lock(latch_);
   if (node_store_.count(frame_id) == 0) {
-    latch_.unlock();
     return;
   }
   if (!node_store_.at(frame_id).IsEvictable()) {
-    latch_.unlock();
     throw std::invalid_argument("node is not evictable in LRUKReplacer::Remove");
   }
   node_store_.erase(frame_id);
   curr_size_ -= 1;
-  latch_.unlock();
 }
 
 /**
