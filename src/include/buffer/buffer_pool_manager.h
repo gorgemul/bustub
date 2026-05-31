@@ -18,7 +18,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "buffer/arc_replacer.h"
+#include "buffer/lru_k_replacer.h"
 #include "common/config.h"
 #include "recovery/log_manager.h"
 #include "storage/disk/disk_scheduler.h"
@@ -68,6 +68,7 @@ class FrameHeader {
   auto GetData() const -> const char *;
   auto GetDataMut() -> char *;
   void Reset();
+  void BindPageId(page_id_t page_id) { page_id_ = page_id; }
 
   /** @brief The frame ID / index of the frame this header represents. */
   const frame_id_t frame_id_;
@@ -95,6 +96,7 @@ class FrameHeader {
    * currently storing. This might allow you to skip searching for the corresponding (page ID, frame ID) pair somewhere
    * else in the buffer pool manager...
    */
+  page_id_t page_id_;
 };
 
 /**
@@ -150,7 +152,7 @@ class BufferPoolManager {
   std::list<frame_id_t> free_frames_;
 
   /** @brief The replacer to find unpinned / candidate pages for eviction. */
-  std::shared_ptr<ArcReplacer> replacer_;
+  std::shared_ptr<LRUKReplacer> replacer_;
 
   /** @brief A pointer to the disk scheduler. Shared with the page guards for flushing. */
   std::shared_ptr<DiskScheduler> disk_scheduler_;
@@ -171,5 +173,6 @@ class BufferPoolManager {
    * stored inside of it. Additionally, you may also want to implement a helper function that returns either a shared
    * pointer to a `FrameHeader` that already has a page's data stored inside of it, or an index to said `FrameHeader`.
    */
+  std::optional<std::shared_ptr<FrameHeader>> GetFrameByFrameId_(frame_id_t frame_id);
 };
 }  // namespace bustub

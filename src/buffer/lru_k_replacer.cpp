@@ -13,7 +13,6 @@
 #include "buffer/lru_k_replacer.h"
 #include <chrono>
 #include <cstdio>
-#include <stdexcept>
 #include "common/exception.h"
 
 namespace bustub {
@@ -134,7 +133,6 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   std::scoped_lock lock(latch_);
   if (node_store_.count(frame_id) == 0) {
-    // throw std::invalid_argument("frame_id not exist in LRUKReplacer::SetEvictable");
     return;
   }
   LRUKNode &node = node_store_.at(frame_id);
@@ -174,6 +172,7 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   }
   if (!node_store_.at(frame_id).IsEvictable()) {
     throw std::invalid_argument("node is not evictable in LRUKReplacer::Remove");
+    log_die("[LRUKReplacer::Remove]: node is not evictable");
   }
   node_store_.erase(frame_id);
   curr_size_ -= 1;

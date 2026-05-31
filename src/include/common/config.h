@@ -15,11 +15,17 @@
 #include <atomic>
 #include <chrono>  // NOLINT
 #include <cstdint>
+#include <iostream>
 
 #define DISABLE_LOCK_MANAGER
 #define DISABLE_CHECKPOINT_MANAGER
 
 namespace bustub {
+
+[[noreturn]] inline void log_die(const char *msg) {
+    std::cout << "[ERROR]: " << msg << std::endl;
+    std::exit(1);
+}
 
 /** Cycle detection is performed every CYCLE_DETECTION_INTERVAL milliseconds. */
 extern std::chrono::milliseconds cycle_detection_interval;
