@@ -62,6 +62,10 @@ ReadPageGuard::ReadPageGuard(page_id_t page_id, std::shared_ptr<FrameHeader> fra
  * @param that The other page guard.
  */
 ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept {
+  if (SameAs(that)) {
+    return;
+  }
+  Drop();
   page_id_ = that.page_id_;
   frame_ = std::move(that.frame_);
   replacer_ = std::move(that.replacer_);
@@ -89,6 +93,10 @@ ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept {
  * @return ReadPageGuard& The newly valid `ReadPageGuard`.
  */
 auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & {
+  if (SameAs(that)) {
+    return *this;
+  }
+  Drop();
   page_id_ = that.page_id_;
   frame_ = std::move(that.frame_);
   replacer_ = std::move(that.replacer_);
@@ -121,6 +129,15 @@ auto ReadPageGuard::GetData() const -> const char * {
 auto ReadPageGuard::IsDirty() const -> bool {
   BUSTUB_ENSURE(is_valid_, "tried to use an invalid read guard");
   return frame_->is_dirty_;
+}
+
+bool ReadPageGuard::SameAs(const ReadPageGuard &that) {
+  return page_id_ == that.page_id_ &&
+    frame_->frame_id_ == that.frame_->frame_id_ &&
+    replacer_ == that.replacer_ &&
+    bpm_latch_ == that.bpm_latch_ &&
+    disk_scheduler_ == that.disk_scheduler_ &&
+    is_valid_ == that.is_valid_;
 }
 
 /**
@@ -217,6 +234,10 @@ WritePageGuard::WritePageGuard(page_id_t page_id, std::shared_ptr<FrameHeader> f
  * @param that The other page guard.
  */
 WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept {
+  if (SameAs(that)) {
+    return;
+  }
+  Drop();
   page_id_ = that.page_id_;
   frame_ = std::move(that.frame_);
   replacer_ = std::move(that.replacer_);
@@ -244,6 +265,10 @@ WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept {
  * @return WritePageGuard& The newly valid `WritePageGuard`.
  */
 auto WritePageGuard::operator=(WritePageGuard &&that) noexcept -> WritePageGuard & {
+  if (SameAs(that)) {
+    return *this;
+  }
+  Drop();
   page_id_ = that.page_id_;
   frame_ = std::move(that.frame_);
   replacer_ = std::move(that.replacer_);
@@ -285,6 +310,15 @@ auto WritePageGuard::GetDataMut() -> char * {
 auto WritePageGuard::IsDirty() const -> bool {
   BUSTUB_ENSURE(is_valid_, "tried to use an invalid write guard");
   return frame_->is_dirty_;
+}
+
+bool WritePageGuard::SameAs(const WritePageGuard &that) {
+  return page_id_ == that.page_id_ &&
+    frame_->frame_id_ == that.frame_->frame_id_ &&
+    replacer_ == that.replacer_ &&
+    bpm_latch_ == that.bpm_latch_ &&
+    disk_scheduler_ == that.disk_scheduler_ &&
+    is_valid_ == that.is_valid_;
 }
 
 /**
