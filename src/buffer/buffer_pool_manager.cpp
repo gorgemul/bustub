@@ -121,7 +121,7 @@ auto BufferPoolManager::NewPage() -> page_id_t {
   return next_page_id_.fetch_add(1);
 }
 
-// should be caller's job to check if page_id exist in page_table_
+// caller should hold the lock
 auto BufferPoolManager::GetFrameByFrameId_(frame_id_t frame_id) -> std::optional<std::shared_ptr<FrameHeader>> {
   for (std::shared_ptr<FrameHeader> frame: frames_) {
     if (frame_id == frame->frame_id_) {
@@ -150,7 +150,30 @@ auto BufferPoolManager::GetFrameByFrameId_(frame_id_t frame_id) -> std::optional
  * @param page_id The page ID of the page we want to delete.
  * @return `false` if the page exists but could not be deleted, `true` if the page didn't exist or deletion succeeded.
  */
-auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool { UNIMPLEMENTED("TODO(P1): Add implementation."); }
+auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
+  std::optional<size_t> frame_pin_count_option = GetPinCount(page_id);
+  std::scoped_lock lock(*bpm_latch_);
+  if (frame_pin_count_option.has_value()) {
+    size_t frame_pin_count = frame_pin_count_option.value();
+    if (frame_pin_count > 0) {
+      return false;
+    }
+    if (page_table_.count(page_id) > 0) {
+      frame_id_t frame_id = page_table_.at(page_id);
+      auto frame_option = GetFrameByFrameId_(frame_id);
+      if (!frame_option.has_value()) {
+        log_die("[BufferPoolManager::DeletePage] frame should exist in frames_");
+      }
+      std::shared_ptr<FrameHeader> frame = frame_option.value();
+      frame->Reset();
+      free_frames_.push_back(frame_id);
+      page_table_.erase(frame->page_id_);
+      replacer_->Remove(frame_id);
+    }
+  }
+  disk_scheduler_->DeallocatePage(page_id);
+  return true;
+}
 
 /**
  * @brief Acquires an optional write-locked guard over a page of data. The user can specify an `AccessType` if needed.

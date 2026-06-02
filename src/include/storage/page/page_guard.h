@@ -170,7 +170,6 @@ class WritePageGuard {
     return reinterpret_cast<T *>(GetDataMut());
   }
   auto IsDirty() const -> bool;
-  bool SameAs(const WritePageGuard &that);
   void Flush();
   void Drop();
   ~WritePageGuard();
