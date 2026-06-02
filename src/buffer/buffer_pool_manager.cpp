@@ -117,13 +117,11 @@ auto BufferPoolManager::Size() const -> size_t { return num_frames_; }
  *
  * @return The page ID of the newly allocated page.
  */
-auto BufferPoolManager::NewPage() -> page_id_t {
-  return next_page_id_.fetch_add(1);
-}
+auto BufferPoolManager::NewPage() -> page_id_t { return next_page_id_.fetch_add(1); }
 
 // caller should hold the lock
 auto BufferPoolManager::GetFrameByFrameId_(frame_id_t frame_id) -> std::optional<std::shared_ptr<FrameHeader>> {
-  for (std::shared_ptr<FrameHeader> frame: frames_) {
+  for (std::shared_ptr<FrameHeader> frame : frames_) {
     if (frame_id == frame->frame_id_) {
       return frame;
     }
@@ -152,7 +150,6 @@ auto BufferPoolManager::GetFrameByFrameId_(frame_id_t frame_id) -> std::optional
  */
 auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
   std::optional<size_t> frame_pin_count_option = GetPinCount(page_id);
-  std::scoped_lock lock(*bpm_latch_);
   if (frame_pin_count_option.has_value()) {
     size_t frame_pin_count = frame_pin_count_option.value();
     if (frame_pin_count > 0) {
@@ -215,7 +212,6 @@ auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
  * returns `std::nullopt`; otherwise, returns a `WritePageGuard` ensuring exclusive and mutable access to a page's data.
  */
 auto BufferPoolManager::CheckedWritePage(page_id_t page_id, AccessType access_type) -> std::optional<WritePageGuard> {
-  std::scoped_lock lock(*bpm_latch_);
   if (page_table_.count(page_id) == 0) {
     if (free_frames_.size() == 0) {
       std::optional<frame_id_t> evicted_frame_id_option = replacer_->Evict();
@@ -292,7 +288,6 @@ auto BufferPoolManager::CheckedWritePage(page_id_t page_id, AccessType access_ty
  * returns `std::nullopt`; otherwise, returns a `ReadPageGuard` ensuring shared and read-only access to a page's data.
  */
 auto BufferPoolManager::CheckedReadPage(page_id_t page_id, AccessType access_type) -> std::optional<ReadPageGuard> {
-  std::scoped_lock lock(*bpm_latch_);
   if (page_table_.count(page_id) == 0) {
     if (free_frames_.size() == 0) {
       std::optional<frame_id_t> evicted_frame_id_option = replacer_->Evict();
@@ -488,9 +483,9 @@ void BufferPoolManager::FlushAllPages() { UNIMPLEMENTED("TODO(P1): Add implement
  * @return std::optional<size_t> The pin count if the page exists; otherwise, `std::nullopt`.
  */
 auto BufferPoolManager::GetPinCount(page_id_t page_id) -> std::optional<size_t> {
-  std::scoped_lock lock(*bpm_latch_);
   if (page_table_.count(page_id) == 0) {
-    return std::nullopt;;
+    return std::nullopt;
+    ;
   }
   frame_id_t frame_id = page_table_.at(page_id);
   auto frame_opion = GetFrameByFrameId_(frame_id);

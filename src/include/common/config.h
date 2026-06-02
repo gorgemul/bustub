@@ -23,8 +23,8 @@
 namespace bustub {
 
 [[noreturn]] inline void log_die(const char *msg) {
-    std::cout << "[ERROR]: " << msg << std::endl;
-    std::exit(1);
+  std::cout << "[ERROR]: " << msg << std::endl;
+  std::exit(1);
 }
 
 /** Cycle detection is performed every CYCLE_DETECTION_INTERVAL milliseconds. */

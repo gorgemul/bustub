@@ -11,11 +11,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "storage/page/page_guard.h"
+#include <cstdio>
 #include <memory>
+#include <stdexcept>
 #include "buffer/lru_k_replacer.h"
 #include "common/macros.h"
-#include <stdexcept>
-#include <cstdio>
 
 namespace bustub {
 
@@ -43,6 +43,7 @@ ReadPageGuard::ReadPageGuard(page_id_t page_id, std::shared_ptr<FrameHeader> fra
   frame_->rwlatch_.lock_shared();
   replacer_->RecordAccess(frame_->frame_id_);
   frame_->pin_count_.fetch_add(1);
+  replacer_->SetEvictable(frame_->frame_id_, false);
   is_valid_ = true;
 }
 
@@ -62,12 +63,12 @@ ReadPageGuard::ReadPageGuard(page_id_t page_id, std::shared_ptr<FrameHeader> fra
  * @param that The other page guard.
  */
 ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept
-  : page_id_(that.page_id_),
-    frame_(std::move(that.frame_)),
-    replacer_(std::move(that.replacer_)),
-    bpm_latch_(std::move(that.bpm_latch_)),
-    disk_scheduler_(std::move(that.disk_scheduler_)),
-    is_valid_(that.is_valid_) {
+    : page_id_(that.page_id_),
+      frame_(std::move(that.frame_)),
+      replacer_(std::move(that.replacer_)),
+      bpm_latch_(std::move(that.bpm_latch_)),
+      disk_scheduler_(std::move(that.disk_scheduler_)),
+      is_valid_(that.is_valid_) {
   that.is_valid_ = false;
 }
 
@@ -203,6 +204,7 @@ WritePageGuard::WritePageGuard(page_id_t page_id, std::shared_ptr<FrameHeader> f
   frame_->rwlatch_.lock();
   replacer_->RecordAccess(frame_->frame_id_);
   frame_->pin_count_.fetch_add(1);
+  replacer_->SetEvictable(frame_->frame_id_, false);
   is_valid_ = true;
 }
 
@@ -222,12 +224,12 @@ WritePageGuard::WritePageGuard(page_id_t page_id, std::shared_ptr<FrameHeader> f
  * @param that The other page guard.
  */
 WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept
-  : page_id_(that.page_id_),
-    frame_(std::move(that.frame_)),
-    replacer_(std::move(that.replacer_)),
-    bpm_latch_(std::move(that.bpm_latch_)),
-    disk_scheduler_(std::move(that.disk_scheduler_)),
-    is_valid_(that.is_valid_) {
+    : page_id_(that.page_id_),
+      frame_(std::move(that.frame_)),
+      replacer_(std::move(that.replacer_)),
+      bpm_latch_(std::move(that.bpm_latch_)),
+      disk_scheduler_(std::move(that.disk_scheduler_)),
+      is_valid_(that.is_valid_) {
   that.is_valid_ = false;
 }
 
